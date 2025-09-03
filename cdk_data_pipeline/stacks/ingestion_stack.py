@@ -11,8 +11,7 @@ class IngestionStack(Stack):
         self.data_bucket = s3.Bucket(
             self,
             "DataBucket",
-            bucket_name=f"aws-data-lab-data-{self.account}-{self.region}",
-            versioned=True,
+            bucket_name=f"randomuser-api-data-{self.account}-{self.region}",
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
