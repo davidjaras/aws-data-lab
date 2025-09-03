@@ -87,7 +87,11 @@ def generate_s3_key(execution_key):
     now = datetime.now()
     request_id = uuid.uuid4().hex
 
-    return f"{S3_PREFIX}/execution_key={execution_key}/year={now.year}/month={now.month:02d}/day={now.day:02d}/request_id={request_id}.parquet"
+    return (
+        f"{S3_PREFIX}/execution_key={execution_key}/"
+        f"year={now.year}/month={now.month:02d}/day={now.day:02d}/"
+        f"request_id={request_id}.json"
+    )
 
 
 def upload_to_s3(bucket, key, data):
