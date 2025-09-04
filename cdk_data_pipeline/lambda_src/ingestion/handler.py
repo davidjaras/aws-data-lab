@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import urllib.error
@@ -6,6 +7,7 @@ import uuid
 from datetime import datetime
 
 import boto3
+import pandas as pd
 
 S3_BUCKET = os.getenv("S3_BUCKET")
 S3_PREFIX = os.getenv("S3_PREFIX")
@@ -44,7 +46,7 @@ def flatten_user(user):
         "city": get_nested_value(user, "location.city"),
         "state": get_nested_value(user, "location.state"),
         "country": get_nested_value(user, "location.country"),
-        "postcode": get_nested_value(user, "location.postcode"),
+        "postcode": str(get_nested_value(user, "location.postcode")),
         "latitude": get_nested_value(user, "location.coordinates.latitude"),
         "longitude": get_nested_value(user, "location.coordinates.longitude"),
         "timezone_offset": get_nested_value(user, "location.timezone.offset"),
@@ -90,19 +92,22 @@ def generate_s3_key(execution_key):
     return (
         f"{S3_PREFIX}/execution_key={execution_key}/"
         f"year={now.year}/month={now.month:02d}/day={now.day:02d}/"
-        f"request_id={request_id}.json"
+        f"request_id={request_id}.parquet"
     )
 
 
 def upload_to_s3(bucket, key, data):
     try:
-        json_data = json.dumps(data, indent=2)
+        df = pd.DataFrame(data)
+        buffer = io.BytesIO()
+        df.to_parquet(buffer, index=False)
+        buffer.seek(0)
 
         s3.put_object(
             Bucket=bucket,
             Key=key,
-            Body=json_data.encode("utf-8"),
-            ContentType="application/json",
+            Body=buffer.getvalue(),
+            ContentType="application/vnd.apache.parquet",
         )
 
         return f"s3://{bucket}/{key}"
