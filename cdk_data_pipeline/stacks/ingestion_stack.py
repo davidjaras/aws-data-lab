@@ -8,6 +8,7 @@ class IngestionStack(Stack):
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
+        self.data_prefix = "randomuser_api"
         self.data_bucket = s3.Bucket(
             self,
             "DataBucket",
@@ -24,7 +25,7 @@ class IngestionStack(Stack):
             handler="handler.lambda_handler",
             environment={
                 "S3_BUCKET": self.data_bucket.bucket_name,
-                "S3_PREFIX": "randomuser_api",
+                "S3_PREFIX": self.data_prefix,
             },
         )
 

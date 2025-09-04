@@ -2,18 +2,29 @@ import os
 
 import aws_cdk as cdk
 
+from stacks.catalog_stack import CatalogStack
 from stacks.ingestion_stack import IngestionStack
-
 
 app = cdk.App()
 
 ingestion_stack = IngestionStack(
-    app, 
+    app,
     "IngestionStack",
     env=cdk.Environment(
-        account=os.getenv('CDK_DEFAULT_ACCOUNT'),
-        region=os.getenv('CDK_DEFAULT_REGION')
-    )
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
+    ),
 )
+
+catalog_stack = CatalogStack(
+    app,
+    "CatalogStack",
+    data_bucket=ingestion_stack.data_bucket,
+    data_prefix=ingestion_stack.data_prefix,
+    env=cdk.Environment(
+        account=os.getenv("CDK_DEFAULT_ACCOUNT"), region=os.getenv("CDK_DEFAULT_REGION")
+    ),
+)
+
+catalog_stack.add_dependency(ingestion_stack)
 
 app.synth()
