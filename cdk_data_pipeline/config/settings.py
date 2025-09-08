@@ -112,7 +112,7 @@ class DataPipelineConfig:
             ),
             lambda_config=LambdaConfig(
                 timeout_seconds=10,
-                api_results_count=3,
+                api_results_count=100,
                 api_timeout_seconds=30,
                 max_retry_attempts=3,
             ),
