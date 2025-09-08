@@ -28,12 +28,20 @@ class DataGovernanceStack(Stack):
             f"cdk-hnb659fds-cfn-exec-role-{self.account}-{self.region}"
         )
 
+        lake_formation_admin = self.node.try_get_context("lakeFormationAdmin")
+        if not lake_formation_admin:
+            raise ValueError(
+                "lakeFormationAdmin context variable is required. "
+                "Set it using: cdk deploy -c lakeFormationAdmin='arn:aws:iam::ACCOUNT:user/USERNAME' "
+                "or add it to cdk.json context section."
+            )
+
         self.data_lake_settings = lakeformation.CfnDataLakeSettings(
             self,
             "RandomUserDataLakeSettings",
             admins=[
                 lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty(
-                    data_lake_principal_identifier=f"arn:aws:iam::{self.account}:user/davidjaras"
+                    data_lake_principal_identifier=lake_formation_admin
                 ),
                 lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty(
                     data_lake_principal_identifier=cfn_exec_role_arn
@@ -52,9 +60,7 @@ class DataGovernanceStack(Stack):
                 parameters={
                     "DataLakeSettings": {
                         "DataLakeAdmins": [
-                            {
-                                "DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"
-                            },
+                            {"DataLakePrincipalIdentifier": lake_formation_admin},
                             {"DataLakePrincipalIdentifier": cfn_exec_role_arn},
                         ],
                         "CreateDatabaseDefaultPermissions": [],
@@ -69,9 +75,7 @@ class DataGovernanceStack(Stack):
                 parameters={
                     "DataLakeSettings": {
                         "DataLakeAdmins": [
-                            {
-                                "DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"
-                            },
+                            {"DataLakePrincipalIdentifier": lake_formation_admin},
                             {"DataLakePrincipalIdentifier": cfn_exec_role_arn},
                         ],
                         "CreateDatabaseDefaultPermissions": [],

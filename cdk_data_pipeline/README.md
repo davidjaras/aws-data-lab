@@ -52,13 +52,25 @@ pip install -r requirements.txt
 pip install -r requirements-dev.txt  # For development/testing
 ```
 
-### 2. Configuration (Optional)
-The project uses sensible defaults, but you can customize settings:
-```bash
-# Set Lake Formation admin (optional)
-export CDK_CONTEXT_LAKE_FORMATION_ADMIN="arn:aws:iam::ACCOUNT:user/USERNAME"
+### 2. Configuration (Required)
+**Important**: You must specify a Lake Formation administrator before deployment:
 
-# Other context variables in cdk.json
+#### Option A: Command Line Parameter (Recommended)
+```bash
+# Deploy with specific user
+cdk deploy -c lakeFormationAdmin="arn:aws:iam::ACCOUNT-ID:user/USERNAME"
+
+# Deploy with administrative role
+cdk deploy -c lakeFormationAdmin="arn:aws:iam::ACCOUNT-ID:role/AdminRole"
+```
+
+#### Option B: Add to cdk.json (Permanent)
+```json
+{
+  "context": {
+    "lakeFormationAdmin": "arn:aws:iam::123456789012:user/your-username"
+  }
+}
 ```
 
 ## Deployment Guide
@@ -68,8 +80,10 @@ export CDK_CONTEXT_LAKE_FORMATION_ADMIN="arn:aws:iam::ACCOUNT:user/USERNAME"
 ### Phase 1: Infrastructure (Base Resources)
 Deploy all stacks without table-level permissions:
 ```bash
-# Deploy core infrastructure
-cdk deploy IngestionStack CatalogStack QueryStack DataGovernanceStack -c postCrawlerPermissions=false
+# Deploy core infrastructure (replace ACCOUNT-ID and USERNAME)
+cdk deploy IngestionStack CatalogStack QueryStack DataGovernanceStack \
+  -c postCrawlerPermissions=false \
+  -c lakeFormationAdmin="arn:aws:iam::ACCOUNT-ID:user/USERNAME"
 
 # Verify deployment
 aws glue get-database --name randomuser_database
@@ -95,8 +109,10 @@ aws glue get-table --database-name randomuser_database --name randomuser_api
 ### Phase 3: Data Governance (Table Permissions)
 Deploy table-level permissions after table exists:
 ```bash
-# Deploy table permissions
-cdk deploy DataGovernanceStack -c postCrawlerPermissions=true
+# Deploy table permissions (replace ACCOUNT-ID and USERNAME)
+cdk deploy DataGovernanceStack \
+  -c postCrawlerPermissions=true \
+  -c lakeFormationAdmin="arn:aws:iam::ACCOUNT-ID:user/USERNAME"
 
 # Verify Lake Formation setup
 aws lakeformation get-data-lake-settings
