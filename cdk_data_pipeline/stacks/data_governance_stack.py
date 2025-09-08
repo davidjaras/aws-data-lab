@@ -35,7 +35,7 @@ class DataGovernanceStack(Stack):
                 ),
                 lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty(
                     data_lake_principal_identifier=cfn_exec_role_arn
-                )
+                ),
             ],
             create_database_default_permissions=[],
             create_table_default_permissions=[],
@@ -50,7 +50,9 @@ class DataGovernanceStack(Stack):
                 parameters={
                     "DataLakeSettings": {
                         "DataLakeAdmins": [
-                            {"DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"},
+                            {
+                                "DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"
+                            },
                             {"DataLakePrincipalIdentifier": cfn_exec_role_arn},
                         ],
                         "CreateDatabaseDefaultPermissions": [],
@@ -65,7 +67,9 @@ class DataGovernanceStack(Stack):
                 parameters={
                     "DataLakeSettings": {
                         "DataLakeAdmins": [
-                            {"DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"},
+                            {
+                                "DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"
+                            },
                             {"DataLakePrincipalIdentifier": cfn_exec_role_arn},
                         ],
                         "CreateDatabaseDefaultPermissions": [],
@@ -74,17 +78,18 @@ class DataGovernanceStack(Stack):
                 },
                 physical_resource_id=cr.PhysicalResourceId.of("LF-Settings-Once"),
             ),
-            policy=cr.AwsCustomResourcePolicy.from_statements([
-                iam.PolicyStatement(
-                    actions=[
-                        "lakeformation:PutDataLakeSettings",
-                        "lakeformation:GetDataLakeSettings",
-                    ],
-                    resources=["*"],
-                )
-            ]),
+            policy=cr.AwsCustomResourcePolicy.from_statements(
+                [
+                    iam.PolicyStatement(
+                        actions=[
+                            "lakeformation:PutDataLakeSettings",
+                            "lakeformation:GetDataLakeSettings",
+                        ],
+                        resources=["*"],
+                    )
+                ]
+            ),
         )
-
 
         self.s3_resource = lakeformation.CfnResource(
             self,
