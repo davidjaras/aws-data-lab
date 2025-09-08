@@ -135,22 +135,6 @@ class DataGovernanceStack(Stack):
             permissions=["DESCRIBE"],
         )
 
-        self.table_reader_table_permissions = lakeformation.CfnPermissions(
-            self,
-            "TableReaderTablePermissions",
-            data_lake_principal=lakeformation.CfnPermissions.DataLakePrincipalProperty(
-                data_lake_principal_identifier=athena_table_reader_role.role_arn
-            ),
-            resource=lakeformation.CfnPermissions.ResourceProperty(
-                table_resource=lakeformation.CfnPermissions.TableResourceProperty(
-                    catalog_id=self.account,
-                    database_name=database.ref,
-                    name="randomuser_api",
-                )
-            ),
-            permissions=["SELECT"],
-        )
-
         self.column_reader_database_permissions = lakeformation.CfnPermissions(
             self,
             "ColumnReaderDatabasePermissions",
@@ -165,31 +149,49 @@ class DataGovernanceStack(Stack):
             permissions=["DESCRIBE"],
         )
 
-        self.column_reader_permissions = lakeformation.CfnPermissions(
-            self,
-            "ColumnReaderPermissions",
-            data_lake_principal=lakeformation.CfnPermissions.DataLakePrincipalProperty(
-                data_lake_principal_identifier=athena_column_reader_role.role_arn
-            ),
-            resource=lakeformation.CfnPermissions.ResourceProperty(
-                table_with_columns_resource=lakeformation.CfnPermissions.TableWithColumnsResourceProperty(
-                    catalog_id=self.account,
-                    database_name=database.ref,
-                    name="randomuser_api",
-                    column_names=[
-                        "street_number",
-                        "street_name",
-                        "city",
-                        "state",
-                        "country",
-                        "postcode",
-                        "latitude",
-                        "longitude",
-                    ],
-                )
-            ),
-            permissions=["SELECT"],
-        )
+        post_crawler_permissions = self.node.try_get_context("postCrawlerPermissions")
+        if post_crawler_permissions == "true":
+            self.table_reader_permissions = lakeformation.CfnPermissions(
+                self,
+                "TableReaderTablePermissions",
+                data_lake_principal=lakeformation.CfnPermissions.DataLakePrincipalProperty(
+                    data_lake_principal_identifier=athena_table_reader_role.role_arn
+                ),
+                resource=lakeformation.CfnPermissions.ResourceProperty(
+                    table_resource=lakeformation.CfnPermissions.TableResourceProperty(
+                        catalog_id=self.account,
+                        database_name=database.ref,
+                        name="randomuser_api",
+                    )
+                ),
+                permissions=["SELECT"],
+            )
+
+            self.column_reader_permissions = lakeformation.CfnPermissions(
+                self,
+                "ColumnReaderPermissions",
+                data_lake_principal=lakeformation.CfnPermissions.DataLakePrincipalProperty(
+                    data_lake_principal_identifier=athena_column_reader_role.role_arn
+                ),
+                resource=lakeformation.CfnPermissions.ResourceProperty(
+                    table_with_columns_resource=lakeformation.CfnPermissions.TableWithColumnsResourceProperty(
+                        catalog_id=self.account,
+                        database_name=database.ref,
+                        name="randomuser_api",
+                        column_names=[
+                            "street_number",
+                            "street_name",
+                            "city",
+                            "state",
+                            "country",
+                            "postcode",
+                            "latitude",
+                            "longitude",
+                        ],
+                    )
+                ),
+                permissions=["SELECT"],
+            )
 
         self.s3_resource.node.add_dependency(self.data_lake_settings)
         put_settings.node.add_dependency(self.data_lake_settings)
