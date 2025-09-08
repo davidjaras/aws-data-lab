@@ -3,6 +3,7 @@ from aws_cdk import aws_glue as glue
 from aws_cdk import aws_iam as iam
 from aws_cdk import aws_lakeformation as lakeformation
 from aws_cdk import aws_s3 as s3
+from aws_cdk import custom_resources as cr
 from constructs import Construct
 
 
@@ -27,13 +28,10 @@ class DataGovernanceStack(Stack):
 
         self.data_lake_settings = lakeformation.CfnDataLakeSettings(
             self,
-            "DataLakeSettings",
+            "RandomUserDataLakeSettings",
             admins=[
                 lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty(
                     data_lake_principal_identifier=f"arn:aws:iam::{self.account}:user/davidjaras"
-                ),
-                lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty(
-                    data_lake_principal_identifier=f"arn:aws:iam::{self.account}:root"
                 ),
                 lakeformation.CfnDataLakeSettings.DataLakePrincipalProperty(
                     data_lake_principal_identifier=cfn_exec_role_arn
@@ -42,6 +40,51 @@ class DataGovernanceStack(Stack):
             create_database_default_permissions=[],
             create_table_default_permissions=[],
         )
+
+        put_settings = cr.AwsCustomResource(
+            self,
+            "ForceLakeFormationSettings",
+            on_create=cr.AwsSdkCall(
+                service="LakeFormation",
+                action="putDataLakeSettings",
+                parameters={
+                    "DataLakeSettings": {
+                        "DataLakeAdmins": [
+                            {"DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"},
+                            {"DataLakePrincipalIdentifier": cfn_exec_role_arn},
+                        ],
+                        "CreateDatabaseDefaultPermissions": [],
+                        "CreateTableDefaultPermissions": [],
+                    }
+                },
+                physical_resource_id=cr.PhysicalResourceId.of("LF-Settings-Once"),
+            ),
+            on_update=cr.AwsSdkCall(
+                service="LakeFormation",
+                action="putDataLakeSettings",
+                parameters={
+                    "DataLakeSettings": {
+                        "DataLakeAdmins": [
+                            {"DataLakePrincipalIdentifier": f"arn:aws:iam::{self.account}:user/davidjaras"},
+                            {"DataLakePrincipalIdentifier": cfn_exec_role_arn},
+                        ],
+                        "CreateDatabaseDefaultPermissions": [],
+                        "CreateTableDefaultPermissions": [],
+                    }
+                },
+                physical_resource_id=cr.PhysicalResourceId.of("LF-Settings-Once"),
+            ),
+            policy=cr.AwsCustomResourcePolicy.from_statements([
+                iam.PolicyStatement(
+                    actions=[
+                        "lakeformation:PutDataLakeSettings",
+                        "lakeformation:GetDataLakeSettings",
+                    ],
+                    resources=["*"],
+                )
+            ]),
+        )
+
 
         self.s3_resource = lakeformation.CfnResource(
             self,
@@ -64,34 +107,6 @@ class DataGovernanceStack(Stack):
             permissions=["DATA_LOCATION_ACCESS"],
         )
 
-        self.table_reader_data_location_permissions = lakeformation.CfnPermissions(
-            self,
-            "TableReaderDataLocationPermissions",
-            data_lake_principal=lakeformation.CfnPermissions.DataLakePrincipalProperty(
-                data_lake_principal_identifier=athena_table_reader_role.role_arn
-            ),
-            resource=lakeformation.CfnPermissions.ResourceProperty(
-                data_location_resource=lakeformation.CfnPermissions.DataLocationResourceProperty(
-                    s3_resource=data_bucket.bucket_arn
-                )
-            ),
-            permissions=["DATA_LOCATION_ACCESS"],
-        )
-
-        self.column_reader_data_location_permissions = lakeformation.CfnPermissions(
-            self,
-            "ColumnReaderDataLocationPermissions",
-            data_lake_principal=lakeformation.CfnPermissions.DataLakePrincipalProperty(
-                data_lake_principal_identifier=athena_column_reader_role.role_arn
-            ),
-            resource=lakeformation.CfnPermissions.ResourceProperty(
-                data_location_resource=lakeformation.CfnPermissions.DataLocationResourceProperty(
-                    s3_resource=data_bucket.bucket_arn
-                )
-            ),
-            permissions=["DATA_LOCATION_ACCESS"],
-        )
-
         self.crawler_database_permissions = lakeformation.CfnPermissions(
             self,
             "CrawlerDatabasePermissions",
@@ -103,7 +118,7 @@ class DataGovernanceStack(Stack):
                     catalog_id=self.account, name=database.ref
                 )
             ),
-            permissions=["CREATE_TABLE", "DESCRIBE"],
+            permissions=["CREATE_TABLE", "ALTER", "DESCRIBE"],
         )
 
         self.table_reader_database_permissions = lakeformation.CfnPermissions(
@@ -130,7 +145,7 @@ class DataGovernanceStack(Stack):
                 table_resource=lakeformation.CfnPermissions.TableResourceProperty(
                     catalog_id=self.account,
                     database_name=database.ref,
-                    table_wildcard=lakeformation.CfnPermissions.TableWildcardProperty(),
+                    name="randomuser_api",
                 )
             ),
             permissions=["SELECT"],
@@ -177,19 +192,8 @@ class DataGovernanceStack(Stack):
         )
 
         self.s3_resource.node.add_dependency(self.data_lake_settings)
+        put_settings.node.add_dependency(self.data_lake_settings)
         self.crawler_data_location_permissions.node.add_dependency(self.s3_resource)
-        self.table_reader_data_location_permissions.node.add_dependency(
-            self.s3_resource
-        )
-        self.column_reader_data_location_permissions.node.add_dependency(
-            self.s3_resource
-        )
         self.crawler_database_permissions.node.add_dependency(database)
         self.table_reader_database_permissions.node.add_dependency(database)
-        self.table_reader_table_permissions.node.add_dependency(
-            self.table_reader_data_location_permissions
-        )
         self.column_reader_database_permissions.node.add_dependency(database)
-        self.column_reader_permissions.node.add_dependency(
-            self.column_reader_data_location_permissions
-        )

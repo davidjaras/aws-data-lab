@@ -90,6 +90,12 @@ class QueryStack(Stack):
                     "athena:ListWorkGroups",
                     "athena:GetWorkGroup",
                     "athena:StopQueryExecution",
+                    "glue:GetDatabase",
+                    "glue:GetTable",
+                    "glue:GetPartitions",
+                    "lakeformation:GetDataAccess",
+                    "lakeformation:GetResourceLFTags",
+                    "lakeformation:ListLFTags",
                 ],
                 resources=["*"],
             )
