@@ -11,7 +11,11 @@ import pandas as pd
 
 S3_BUCKET = os.getenv("S3_BUCKET")
 S3_PREFIX = os.getenv("S3_PREFIX")
-API_URL = "https://randomuser.me/api/?results=3"
+API_RESULTS_COUNT = int(os.getenv("API_RESULTS_COUNT", "100"))
+API_TIMEOUT = int(os.getenv("API_TIMEOUT", "30"))
+MAX_RETRIES = int(os.getenv("MAX_RETRIES", "3"))
+
+API_URL = f"https://randomuser.me/api/?results={API_RESULTS_COUNT}"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
     "Accept": "application/json, text/plain, */*",
@@ -69,7 +73,7 @@ def flatten_user(user):
     }
 
 
-def fetch_api_data(url, timeout=30):
+def fetch_api_data(url, timeout=API_TIMEOUT):
     try:
         req = urllib.request.Request(url, headers=HEADERS)
         with urllib.request.urlopen(req, timeout=timeout) as response:

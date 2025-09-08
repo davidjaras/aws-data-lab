@@ -6,6 +6,8 @@ from aws_cdk import aws_s3 as s3
 from aws_cdk import custom_resources as cr
 from constructs import Construct
 
+from config.settings import CONFIG
+
 
 class DataGovernanceStack(Stack):
     def __init__(
@@ -158,7 +160,7 @@ class DataGovernanceStack(Stack):
         if post_crawler_permissions == "true":
             self.table_reader_permissions = lakeformation.CfnPermissions(
                 self,
-                "TableReaderTablePermissions",
+                "TableReaderPermissions",
                 data_lake_principal=lakeformation.CfnPermissions.DataLakePrincipalProperty(
                     data_lake_principal_identifier=athena_table_reader_role.role_arn
                 ),
@@ -166,7 +168,7 @@ class DataGovernanceStack(Stack):
                     table_resource=lakeformation.CfnPermissions.TableResourceProperty(
                         catalog_id=self.account,
                         database_name=database.ref,
-                        name="randomuser_api",
+                        name=CONFIG.table.name,
                     )
                 ),
                 permissions=["SELECT"],
@@ -182,17 +184,8 @@ class DataGovernanceStack(Stack):
                     table_with_columns_resource=lakeformation.CfnPermissions.TableWithColumnsResourceProperty(
                         catalog_id=self.account,
                         database_name=database.ref,
-                        name="randomuser_api",
-                        column_names=[
-                            "street_number",
-                            "street_name",
-                            "city",
-                            "state",
-                            "country",
-                            "postcode",
-                            "latitude",
-                            "longitude",
-                        ],
+                        name=CONFIG.table.name,
+                        column_names=CONFIG.lake_formation.location_columns,
                     )
                 ),
                 permissions=["SELECT"],

@@ -5,6 +5,8 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
+from config.settings import CONFIG
+
 
 class QueryStack(Stack):
     def __init__(
@@ -19,7 +21,7 @@ class QueryStack(Stack):
         self.results_bucket = s3.Bucket(
             self,
             "AthenaResultsBucket",
-            bucket_name=f"athena-results-{Aws.ACCOUNT_ID}-{Aws.REGION}",
+            bucket_name=f"{CONFIG.buckets.athena_results_prefix}-{Aws.ACCOUNT_ID}-{Aws.REGION}",
             removal_policy=RemovalPolicy.DESTROY,
             auto_delete_objects=True,
         )
@@ -36,8 +38,8 @@ class QueryStack(Stack):
         self.workgroup = athena.CfnWorkGroup(
             self,
             "AthenaWorkGroup",
-            name="randomuser-workgroup",
-            description="Workgroup for querying RandomUser data",
+            name=CONFIG.workgroup.name,
+            description=CONFIG.workgroup.description,
             state="ENABLED",
             work_group_configuration=athena.CfnWorkGroup.WorkGroupConfigurationProperty(
                 enforce_work_group_configuration=True,
@@ -74,7 +76,7 @@ class QueryStack(Stack):
                     actions=["athena:StartQueryExecution"],
                     resources=["*"],
                     conditions={
-                        "StringEquals": {"athena:WorkGroup": "randomuser-workgroup"}
+                        "StringEquals": {"athena:WorkGroup": CONFIG.workgroup.name}
                     },
                 )
             )

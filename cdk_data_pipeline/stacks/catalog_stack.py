@@ -4,6 +4,8 @@ from aws_cdk import aws_iam as iam
 from aws_cdk import aws_s3 as s3
 from constructs import Construct
 
+from config.settings import CONFIG
+
 
 class CatalogStack(Stack):
     def __init__(
@@ -21,8 +23,8 @@ class CatalogStack(Stack):
             "DataLakeDatabase",
             catalog_id=self.account,
             database_input=glue.CfnDatabase.DatabaseInputProperty(
-                name="randomuser_database",
-                description="Data lake database for RandomUser API data",
+                name=CONFIG.database.name,
+                description=CONFIG.database.description,
             ),
         )
 
@@ -42,7 +44,7 @@ class CatalogStack(Stack):
         self.crawler = glue.CfnCrawler(
             self,
             "DataLakeCrawler",
-            name="randomuser-data-crawler",
+            name=CONFIG.table.crawler_name,
             role=self.crawler_role.role_arn,
             database_name=self.database.ref,
             targets=glue.CfnCrawler.TargetsProperty(
