@@ -49,13 +49,10 @@ database_stack = DatabaseStack(
     config=config,
     vpc=network_stack.vpc,
     rds_sg=network_stack.rds_sg,
-    lambda_sg=network_stack.lambda_sg,
-    psycopg2_layer=layers_stack.psycopg2_layer,
     env=aws_env,
     description=f"Database infrastructure for inventory system - {env_name}"
 )
 database_stack.add_dependency(network_stack)
-database_stack.add_dependency(layers_stack)
 
 crud_stack = CRUDStack(
     app,

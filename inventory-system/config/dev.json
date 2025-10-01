@@ -5,7 +5,7 @@
     "max_azs": 2
   },
   "database": {
-    "instance_type": "db.t3.micro",
+    "instance_type": "t3.micro",
     "allocated_storage": 20,
     "database_name": "inventory",
     "backup_retention_days": 7,
