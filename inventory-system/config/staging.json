@@ -1,0 +1,29 @@
+{
+  "environment": "staging",
+  "vpc": {
+    "cidr": "10.1.0.0/16",
+    "max_azs": 2
+  },
+  "database": {
+    "instance_type": "db.t3.micro",
+    "allocated_storage": 20,
+    "database_name": "inventory",
+    "backup_retention_days": 14,
+    "multi_az": false,
+    "deletion_protection": false
+  },
+  "lambda": {
+    "memory_size": 512,
+    "timeout": 30,
+    "runtime": "python3.11"
+  },
+  "api": {
+    "throttle_rate_limit": 500,
+    "throttle_burst_limit": 1000
+  },
+  "tags": {
+    "Environment": "staging",
+    "Project": "inventory-system",
+    "ManagedBy": "CDK"
+  }
+}

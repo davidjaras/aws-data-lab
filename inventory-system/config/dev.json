@@ -1,0 +1,29 @@
+{
+  "environment": "dev",
+  "vpc": {
+    "cidr": "10.0.0.0/16",
+    "max_azs": 2
+  },
+  "database": {
+    "instance_type": "db.t3.micro",
+    "allocated_storage": 20,
+    "database_name": "inventory",
+    "backup_retention_days": 7,
+    "multi_az": false,
+    "deletion_protection": false
+  },
+  "lambda": {
+    "memory_size": 256,
+    "timeout": 30,
+    "runtime": "python3.11"
+  },
+  "api": {
+    "throttle_rate_limit": 100,
+    "throttle_burst_limit": 200
+  },
+  "tags": {
+    "Environment": "dev",
+    "Project": "inventory-system",
+    "ManagedBy": "CDK"
+  }
+}
