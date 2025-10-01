@@ -15,7 +15,7 @@
   "lambda": {
     "memory_size": 256,
     "timeout": 30,
-    "runtime": "python3.11"
+    "runtime": "python3.12"
   },
   "api": {
     "throttle_rate_limit": 100,
