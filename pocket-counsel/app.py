@@ -6,6 +6,8 @@ from stacks.interface_stack import InterfaceStack
 
 app = cdk.App()
 
+telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
+
 env = cdk.Environment(
     account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
     region=os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
@@ -14,6 +16,7 @@ env = cdk.Environment(
 core_stack = CoreStack(
     app,
     "CoreStack",
+    telegram_bot_token=telegram_bot_token,
     env=env,
     description="Core resources for Pocket Counsel: Lambda and Bedrock permissions"
 )

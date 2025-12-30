@@ -18,6 +18,7 @@ class CoreStack(Stack):
         self,
         scope: Construct,
         construct_id: str,
+        telegram_bot_token: str = None,
         **kwargs
     ) -> None:
         super().__init__(scope, construct_id, **kwargs)
@@ -45,6 +46,14 @@ class CoreStack(Stack):
             )
         )
 
+        environment = {
+            "BEDROCK_MODEL_ID": self.BEDROCK_MODEL_ID,
+            "BEDROCK_REGION": self.BEDROCK_REGION
+        }
+        
+        if telegram_bot_token:
+            environment["TELEGRAM_BOT_TOKEN"] = telegram_bot_token
+
         self.core_lambda = _lambda.Function(
             self,
             "CoreLambdaFunction",
@@ -55,10 +64,7 @@ class CoreStack(Stack):
             timeout=Duration.seconds(60),
             memory_size=256,
             role=lambda_role,
-            environment={
-                "BEDROCK_MODEL_ID": self.BEDROCK_MODEL_ID,
-                "BEDROCK_REGION": self.BEDROCK_REGION
-            },
+            environment=environment,
             log_retention=logs.RetentionDays.THREE_DAYS
         )
 
