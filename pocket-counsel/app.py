@@ -2,6 +2,7 @@
 import os
 import aws_cdk as cdk
 from stacks.core_stack import CoreStack
+from stacks.interface_stack import InterfaceStack
 
 app = cdk.App()
 
@@ -16,6 +17,16 @@ core_stack = CoreStack(
     env=env,
     description="Core resources for Pocket Counsel: Lambda and Bedrock permissions"
 )
+
+interface_stack = InterfaceStack(
+    app,
+    "InterfaceStack",
+    core_lambda=core_stack.core_lambda,
+    env=env,
+    description="API Gateway webhook endpoint for Pocket Counsel"
+)
+
+interface_stack.add_dependency(core_stack)
 
 cdk.Tags.of(app).add("Project", "PocketCounsel")
 cdk.Tags.of(app).add("Environment", "Development")

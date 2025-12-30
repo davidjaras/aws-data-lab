@@ -67,25 +67,32 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info(f"Received event: {json.dumps(event)}")
     
     try:
-        user_message = event.get('message', '')
-        user_name = event.get('user_name', 'User')
+        body = json.loads(event.get('body', '{}'))
+        logger.info(f"Parsed body: {json.dumps(body)}")
+        
+        telegram_message = body.get('message', {})
+        user_message = telegram_message.get('text', '')
+        
+        from_user = telegram_message.get('from', {})
+        user_name = from_user.get('first_name', 'User')
         
         if not user_message:
+            logger.warning("No text found in Telegram message")
             return {
-                'statusCode': 400,
-                'body': json.dumps({
-                    'error': 'No message provided',
-                    'usage': 'Send event with {"message": "your question", "user_name": "optional"}'
-                })
+                'statusCode': 200,
+                'body': json.dumps({'ok': True})
             }
         
         logger.info(f"Processing message from {user_name}: {user_message}")
         
         response_text = invoke_bedrock(user_message, user_name)
         
+        logger.info(f"Bedrock response: {response_text}")
+        
         return {
             'statusCode': 200,
             'body': json.dumps({
+                'ok': True,
                 'message': user_message,
                 'response': response_text,
                 'user': user_name
@@ -95,9 +102,6 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     except Exception as e:
         logger.error(f"Error processing request: {e}", exc_info=True)
         return {
-            'statusCode': 500,
-            'body': json.dumps({
-                'error': str(e),
-                'message': 'Internal server error'
-            })
+            'statusCode': 200,
+            'body': json.dumps({'ok': True})
         }
