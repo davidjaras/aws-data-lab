@@ -6,12 +6,12 @@ from stacks.interface_stack import InterfaceStack
 
 app = cdk.App()
 
-telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN")
-
 env = cdk.Environment(
     account=os.environ.get("CDK_DEFAULT_ACCOUNT"),
     region=os.environ.get("CDK_DEFAULT_REGION", "us-east-1")
 )
+
+telegram_bot_token = os.environ.get("TELEGRAM_BOT_TOKEN", "")
 
 core_stack = CoreStack(
     app,
