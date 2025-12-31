@@ -1,0 +1,20 @@
+bedrock:
+  model_id: openai.gpt-oss-120b-1:0
+  region: us-east-1
+  permissions:
+    - InvokeModel
+
+iam:
+  role_name: CoreLambdaRole
+  managed_policies:
+    - service-role/AWSLambdaBasicExecutionRole
+
+lambda:
+  id: CoreLambdaFunction
+  function_name: pocket-counsel-core
+  runtime: PYTHON_3_12
+  handler: handler.lambda_handler
+  code_path: lambda/core
+  timeout_seconds: 60
+  memory_size_mb: 256
+  log_retention_days: THREE_DAYS

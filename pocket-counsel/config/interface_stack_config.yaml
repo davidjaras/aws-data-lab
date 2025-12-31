@@ -1,0 +1,14 @@
+api_gateway:
+  id: PocketCounselApi
+  name: pocket-counsel-api
+  description: Telegram webhook endpoint for Pocket Counsel
+  deploy: true
+  stage_name: dev
+  endpoint_type: REGIONAL
+
+resources:
+  - path: webhook
+    methods:
+      - http_method: POST
+        authorization_type: NONE
+        proxy_integration: true
