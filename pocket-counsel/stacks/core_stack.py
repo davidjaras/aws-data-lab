@@ -83,14 +83,24 @@ class CoreStack(Stack):
         construct_id: str
     ) -> _lambda.Function:
         lambda_config = self.config["lambda"]
+        runtime = getattr(_lambda.Runtime, lambda_config["runtime"])
 
         lambda_function = _lambda.Function(
             self,
             lambda_config["id"],
             function_name=lambda_config["function_name"],
-            runtime=getattr(_lambda.Runtime, lambda_config["runtime"]),
+            runtime=runtime,
             handler=lambda_config["handler"],
-            code=_lambda.Code.from_asset(lambda_config["code_path"]),
+            code=_lambda.Code.from_asset(
+                lambda_config["code_path"],
+                bundling={
+                    "image": runtime.bundling_image,
+                    "command": [
+                        "bash", "-c",
+                        "pip install -r requirements.txt -t /asset-output && cp -au . /asset-output"
+                    ]
+                }
+            ),
             timeout=Duration.seconds(lambda_config["timeout_seconds"]),
             memory_size=lambda_config["memory_size_mb"],
             role=role,

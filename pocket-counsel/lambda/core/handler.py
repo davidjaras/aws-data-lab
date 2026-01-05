@@ -4,6 +4,8 @@ import logging
 from typing import Dict, Any
 import boto3
 import urllib3
+import yaml
+from pathlib import Path
 
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
@@ -14,9 +16,36 @@ TELEGRAM_BOT_TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN', '')
 
 bedrock_runtime = boto3.client('bedrock-runtime', region_name=BEDROCK_REGION)
 
-SYSTEM_PROMPT = """You are Pocket Counsel, an expert personal finance advisor AI assistant. Provide practical, actionable financial guidance to help users make better money decisions.
+CONFIG_CACHE = None
 
-Keep responses concise (2-4 paragraphs). Be friendly, supportive, and non-judgmental. Focus on budgeting, debt management, savings, investment basics, and credit improvement."""
+
+def load_config() -> Dict[str, Any]:
+    global CONFIG_CACHE
+    if CONFIG_CACHE is not None:
+        return CONFIG_CACHE
+    
+    config_path = Path(__file__).parent / 'prompt_config.yaml'
+    try:
+        with open(config_path, 'r') as f:
+            CONFIG_CACHE = yaml.safe_load(f)
+            logger.info("Prompt configuration loaded successfully")
+            return CONFIG_CACHE
+    except Exception as e:
+        logger.error(f"Error loading prompt_config.yaml: {e}")
+        return {
+            'prompts': {
+                'system': 'You are a helpful financial advisor.',
+                'commands': {
+                    'start': 'Welcome!',
+                    'help': 'Help message',
+                    'unknown': 'Unknown command'
+                }
+            },
+            'bedrock': {
+                'max_tokens': 512,
+                'temperature': 0.7
+            }
+        }
 
 
 def send_telegram_message(chat_id: int, text: str) -> bool:
@@ -52,50 +81,28 @@ def send_telegram_message(chat_id: int, text: str) -> bool:
         return False
 
 
-def handle_command(command: str, user_name: str) -> str:
+def handle_command(command: str, user_name: str, config: Dict[str, Any]) -> str:
     """Handle Telegram bot commands"""
+    commands = config['prompts']['commands']
+    
     if command == '/start':
-        return f"""👋 ¡Hola {user_name}! Soy Pocket Counsel, tu asesor financiero personal con IA.
-
-Estoy aquí para ayudarte con:
-💰 Estrategias de presupuesto y ahorro
-📊 Consejos para manejo de deudas
-🎯 Planificación de metas financieras
-💳 Tips para mejorar tu crédito
-📈 Conceptos básicos de inversión
-
-¡Solo pregúntame cualquier duda financiera!
-
-Ejemplos:
-• "¿Cómo debería empezar a hacer un presupuesto?"
-• "¿Debo pagar deudas o ahorrar primero?"
-• "¿Cuánto debería tener en mi fondo de emergencia?"
-
-Escribe /help para ver los comandos disponibles."""
-    
+        return commands['start'].format(user_name=user_name)
     elif command == '/help':
-        return """🤖 **Comandos de Pocket Counsel**
-
-/start - Mensaje de bienvenida
-/help - Mostrar este mensaje de ayuda
-
-**Cómo usar:**
-Simplemente escribe cualquier pregunta financiera y te daré consejos personalizados.
-
-Estoy aquí para ayudarte a tomar mejores decisiones financieras 💰"""
-    
+        return commands['help']
     else:
-        return "Comando desconocido. Escribe /help para ver los comandos disponibles."
+        return commands['unknown']
 
 
-def invoke_bedrock(user_message: str, user_name: str = "there") -> str:
+def invoke_bedrock(user_message: str, user_name: str, config: Dict[str, Any]) -> str:
+    bedrock_params = config['bedrock']
+    system_prompt = config['prompts']['system']
+    
     request_body = {
-        "max_tokens": 512,
-        "temperature": 0.7,
+        **bedrock_params,
         "messages": [
             {
                 "role": "system",
-                "content": SYSTEM_PROMPT
+                "content": system_prompt
             },
             {
                 "role": "user",
@@ -138,6 +145,8 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
     logger.info(f"Received event: {json.dumps(event)}")
     
     try:
+        config = load_config()
+        
         body = json.loads(event.get('body', '{}'))
         logger.info(f"Parsed body: {json.dumps(body)}")
         
@@ -157,11 +166,10 @@ def lambda_handler(event: Dict[str, Any], context: Any) -> Dict[str, Any]:
         
         logger.info(f"Processing message from {user_name} (chat_id: {chat_id}): {user_message}")
         
-        # Detect if it's a command or a question
         if user_message.startswith('/'):
-            response_text = handle_command(user_message, user_name)
+            response_text = handle_command(user_message, user_name, config)
         else:
-            response_text = invoke_bedrock(user_message, user_name)
+            response_text = invoke_bedrock(user_message, user_name, config)
         
         logger.info(f"Response generated: {response_text[:100]}...")
         
